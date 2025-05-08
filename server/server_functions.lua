@@ -1,6 +1,5 @@
 function UpdateGraffitiData()
-    local Players = QBCore.Functions.GetQBPlayers()
-
+    local Players = GetPlayers()
     if Players and isLoaded then
         for k,v in pairs(Players) do
             if v then

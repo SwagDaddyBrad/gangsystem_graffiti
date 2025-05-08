@@ -33,7 +33,7 @@ function SetRotation(entity)
             canPlace = false 
         end
 
-        if canPlace and GetEntityHeightAboveGround(entity) < 2.0 then
+        if canPlace and GetEntityHeightAboveGround(entity) < 1.0 then
             canPlace = false
         end
 
@@ -74,32 +74,19 @@ function GetInfo(model)
     return Config.Sprays[model]
 end
 
-function CheckShopData(gang, PlayerData)
-    if not gang then
-        return false
-    else
-        if PlayerData then
-            if gang == PlayerData.name then
-                return false
-            else
-                return true
-            end
-        else
-            return true
-        end
-    end
-end
-
 function PlaceGraffiti(model, cb)
+    print("Placing Graffiti")
     local ped = PlayerPedId()
 
-    RequestModel(model)
+    lib.requestModel(model, 10000)
     while not HasModelLoaded(model) do
         Wait(0)
     end
 
     local centerCoords = GetEntityCoords(ped) + (GetEntityForwardVector(ped) * 1.5)
     placingObject = CreateObject(model, centerCoords, false, false)
+
+    print(placingObject)
 
     if placingObject then
         isPlacing = true
@@ -108,7 +95,7 @@ function PlaceGraffiti(model, cb)
             while isPlacing do
                 local ped = PlayerPedId()
                 local hit, coords, entity = RayCastGamePlayCamera(10.0)
-                local graffiti = GetClosestGraffiti(100.0)
+                local graffiti = GetClosestGraffiti(Config.CheckForNearbyGraffitis.distance)
                 local blacklist = GetInBlacklistedZone()
 
                 DisableControlAction(0, 24, true)
@@ -120,7 +107,10 @@ function PlaceGraffiti(model, cb)
                 SetEntityCoords(placingObject, coords.x, coords.y, coords.z)
                 SetRotation(placingObject)
 
-                if IsControlJustPressed(0, 177) then
+
+                print("made it here")
+
+                if IsControlJustPressed(0, 73) then
                     DeleteEntity(placingObject)
                     placingObject = nil
                     isPlacing = false
@@ -129,7 +119,7 @@ function PlaceGraffiti(model, cb)
                     cb(false)
                 end
 
-                if graffiti then
+                if graffiti and Config.CheckForNearbyGraffitis.enabled then
                     QBCore.Functions.Notify(Lang:t('error.exist_graffiti'), 'error')
                     DeleteEntity(placingObject)
                     placingObject = nil
@@ -174,6 +164,7 @@ function PlaceGraffiti(model, cb)
             end
         end)
     else
+        print("Failed to create graffiti")
         cb(false)
     end
 end

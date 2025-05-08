@@ -17,41 +17,48 @@ CreateThread(function()
                 }
             end
         end
-
         isLoaded = true
     end)
 end)
 
-QBCore.Functions.CreateCallback('qb-graffiti:server:getGraffitiData', function(source, cb)
+lib.callback.register('qb-graffiti:server:getGraffitiData', function(source)
     while not isLoaded do
         Wait(0)
     end
-
-    cb(Config.Graffitis)
+    return Config.Graffitis
 end)
 
 RegisterServerEvent('qb-graffiti:client:addServerGraffiti', function(model, coords, rotation)
     local source = source
     local Player = QBCore.Functions.GetPlayer(source)
-
     if Player and isLoaded then
-        MySQL.insert('Insert into `graffitis` (owner, model, `coords`, `rotation`) values (@owner, @model, @coords, @rotation)', {
-            ['@owner'] = Player.PlayerData.citizenid,
-            ['@model'] = tostring(model),
-            ['@coords'] = json.encode(vector3(QBCore.Shared.Round(coords.x, 2), QBCore.Shared.Round(coords.y, 2), QBCore.Shared.Round(coords.z, 2))),
-            ['@rotation'] = json.encode(vector3(QBCore.Shared.Round(rotation.x, 2), QBCore.Shared.Round(rotation.y, 2), QBCore.Shared.Round(rotation.z, 2)))
-        }, function(key)
-            Config.Graffitis[tonumber(key)] = {
-                key = tonumber(key),
-                model = tonumber(model),
-                coords = vector3(QBCore.Shared.Round(coords.x, 2), QBCore.Shared.Round(coords.y, 2), QBCore.Shared.Round(coords.z, 2)),
-                rotation = vector3(QBCore.Shared.Round(rotation.x, 2), QBCore.Shared.Round(rotation.y, 2), QBCore.Shared.Round(rotation.z, 2)),
-                entity = nil,
-                blip = nil
-            }
-
-            UpdateGraffitiData()
-        end)
+        if RemoveItem(source, 'spraycan', 1) then
+            local ped = GetPlayerPed(source)
+            local playerCoords = GetEntityCoords(ped)
+            local zone = exports['cb-gangsystem']:GetGangZonePlayer(playerCoords)
+            local gangID = exports['cb-gangsystem']:GetGangID(source)
+            if zone ~= nil and gangID ~= nil then
+                -- TODO: Trigger Server Event for Gang Sprays
+            end
+            MySQL.insert('Insert into `graffitis` (owner, model, `coords`, `rotation`) values (@owner, @model, @coords, @rotation)', {
+                ['@owner'] = Player.PlayerData.citizenid,
+                ['@model'] = tostring(model),
+                ['@coords'] = json.encode(vector3(QBCore.Shared.Round(coords.x, 2), QBCore.Shared.Round(coords.y, 2), QBCore.Shared.Round(coords.z, 2))),
+                ['@rotation'] = json.encode(vector3(QBCore.Shared.Round(rotation.x, 2), QBCore.Shared.Round(rotation.y, 2), QBCore.Shared.Round(rotation.z, 2)))
+            }, function(key)
+                Config.Graffitis[tonumber(key)] = {
+                    key = tonumber(key),
+                    model = tonumber(model),
+                    coords = vector3(QBCore.Shared.Round(coords.x, 2), QBCore.Shared.Round(coords.y, 2), QBCore.Shared.Round(coords.z, 2)),
+                    rotation = vector3(QBCore.Shared.Round(rotation.x, 2), QBCore.Shared.Round(rotation.y, 2), QBCore.Shared.Round(rotation.z, 2)),
+                    entity = nil,
+                    blip = nil
+                }
+                UpdateGraffitiData()
+            end)
+        else
+            TriggerClientEvent('cb-gangsystem:client:Notify', source, "Missing Spraycan", "You don't have a spraycan!", "error")
+        end
     end
 end)
 
@@ -69,62 +76,16 @@ RegisterServerEvent('qb-graffiti:server:removeServerGraffitiByKey', function(key
     end
 end)
 
-RegisterServerEvent('qb-graffiti:server:graffitiShop', function(data)
-    local source = source
-    local Player = QBCore.Functions.GetPlayer(source)
-
-    if Player and isLoaded then
-        if Player.Functions.RemoveMoney('cash', data.price) then
-            Player.Functions.AddItem('spraycan', 1, false, {
-                model = data.model,
-                name = data.name
-            })
-
-            TriggerClientEvent('QBCore:Notify', source, Lang:t('success.buy_spraycan', {value = data.price, value2 = data.name}), 'success')
-        else
-            local morePrice = data.price - Player.PlayerData.money.cash 
-            TriggerClientEvent('QBCore:Notify', source, Lang:t('error.not_have_money', {value = morePrice}), 'error')
-        end
+AddEventHandler('ox_inventory:usedItem', function(playerId, name, slotId, metadata)
+    if name == "spraycan" then
+        print("spraycan")
+        TriggerClientEvent('qb-graffiti:client:placeGraffiti', playerId, GetHashKey('sprays_angels'))
     end
 end)
 
-RegisterServerEvent('qb-graffiti:server:removeServerItem', function(item, amount, slot)
-    local source = source
-    local Player = QBCore.Functions.GetPlayer(source)
-
-    if Player and isLoaded then
-        local itemData = QBCore.Shared.Items[item]
-
-        if slot then
-            Player.Functions.RemoveItem(item, amount, slot)
-        else
-            Player.Functions.RemoveItem(item, amount)
-        end
-
-        if itemData then
-            TriggerClientEvent('inventory:client:ItemBox', source, itemData, 'remove')
-        end
-    end
-end)
-
-QBCore.Functions.CreateUseableItem('spraycan', function(source, item)
-    local source = source
-    local Player = QBCore.Functions.GetPlayer(source)
-
-    if Player and isLoaded then
-        if item.info then
-            TriggerClientEvent('qb-graffiti:client:placeGraffiti', source, item.info.model, item.slot)
-        else
-            TriggerClientEvent('QBCore:Notify', source, Lang:t('error.not_information'), 'error')         
-        end
-    end
-end)
-
-QBCore.Functions.CreateUseableItem('sprayremover', function(source, item)
-    local source = source
-    local Player = QBCore.Functions.GetPlayer(source)
-
-    if Player and isLoaded then
-        TriggerClientEvent('qb-graffiti:client:removeClosestGraffiti', source, item.slot)
+AddEventHandler('ox_inventory:usedItem', function(playerId, name, slotId, metadata)
+    if name == "sprayremover" then
+        print("sprayremover")
+        TriggerClientEvent('qb-graffiti:client:removeClosestGraffiti', playerId)
     end
 end)
