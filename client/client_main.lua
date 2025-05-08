@@ -10,8 +10,6 @@ CreateThread(function()
     while true do
         local ped = PlayerPedId()
         local coords = GetEntityCoords(ped)
-        print(isLoaded)
-
         if isLoaded then
             for k, v in pairs(Config.Graffitis) do
                 local information = GetInfo(tonumber(v.model))
@@ -199,9 +197,7 @@ AddEventHandler('onClientResourceStart', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then
         return
     end
-    
     Wait(2000)
-
     if not isLoaded then
         local data = lib.callback.await('qb-graffiti:server:getGraffitiData')
         Config.Graffitis = data
@@ -214,7 +210,6 @@ AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then
         return
     end
-
     for k,v in pairs(Config.Graffitis) do
         if v then
             if DoesEntityExist(v.entity) then
