@@ -10,6 +10,7 @@ CreateThread(function()
     while true do
         local ped = PlayerPedId()
         local coords = GetEntityCoords(ped)
+        print(isLoaded)
 
         if isLoaded then
             for k, v in pairs(Config.Graffitis) do
@@ -79,7 +80,7 @@ RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
     end
 end)
 
-RegisterNetEvent('qb-graffiti:client:setGraffitiData', function(data)
+RegisterNetEvent('gangsystem_graffiti:client:setGraffitiData', function(data)
     if isLoaded then
         for k,v in pairs(Config.Graffitis) do
             if v then
@@ -92,7 +93,6 @@ RegisterNetEvent('qb-graffiti:client:setGraffitiData', function(data)
                 end
             end
         end
-
         Config.Graffitis = data
         SpawnExistingGraffiti()
     end
@@ -107,8 +107,6 @@ RegisterNetEvent('qb-graffiti:client:placeGraffiti', function(model)
         PlaceGraffiti(model, function(result, coords, rotation)
             if result then
                 local allowed = lib.callback.await('cb-gangsystem:server:CanSprayGraffiti')
-                print("allowed")
-                print(allowed)
                 if not allowed then
                     Notify("Not Enough Prevalence", "You don't have enough prevalence to spray graffiti", "error")
                     return
@@ -147,6 +145,14 @@ RegisterNetEvent('qb-graffiti:client:placeGraffiti', function(model)
                     sprayingParticle = nil
                     sprayingCan = nil
                     TriggerServerEvent('qb-graffiti:client:addServerGraffiti', model, coords, rotation)
+                    local playerPed = PlayerPedId()
+                    local gangID = exports['cb-gangsystem']:GetGangIDClient()
+                    if gangID ~= nil then
+                        local zonePlayerIn = exports['cb-gangsystem']:GetGangZonePlayer(GetEntityCoords(playerPed))
+                        if zonePlayerIn ~= nil then
+                            TriggerServerEvent("cb-gangsystem:server:SprayGraffiti")
+                        end
+                    end
                 else
                     ClearPedTasks(ped)
                     StopParticleFxLooped(sprayingParticle, true)
@@ -189,7 +195,7 @@ RegisterNetEvent('qb-graffiti:client:removeClosestGraffiti', function()
     end
 end)
 
-AddEventHandler('onResourceStart', function(resourceName)
+AddEventHandler('onClientResourceStart', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then
         return
     end

@@ -107,9 +107,6 @@ function PlaceGraffiti(model, cb)
                 SetEntityCoords(placingObject, coords.x, coords.y, coords.z)
                 SetRotation(placingObject)
 
-
-                print("made it here")
-
                 if IsControlJustPressed(0, 73) then
                     DeleteEntity(placingObject)
                     placingObject = nil

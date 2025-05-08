@@ -8,8 +8,8 @@ Config.BlacklistedZones = {
     --{coords = vector3(-376.73, -119.47, 40.73), radius = 400.0}, -- Mechanic
 }
 
-Config.SprayDuration = 40000 -- How long it takes to spray a graffiti
-Config.RemoveDuration = 40000 -- How long it takes to remove a graffiti
+Config.SprayDuration = 5000 -- How long it takes to spray a graffiti
+Config.RemoveDuration = 5000 -- How long it takes to remove a graffiti
 Config.CheckForNearbyGraffitis = {
     enabled = false,
     distance = 100.0

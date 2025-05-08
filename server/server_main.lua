@@ -1,6 +1,7 @@
 isLoaded = false
 
 CreateThread(function()
+    print("loading graffiti data")
     MySQL.query('Select `key`, `owner`, `model`, `coords`, `rotation` from `graffitis`', {}, function(result)
         for k,v in pairs(result) do
             if v then
@@ -33,13 +34,6 @@ RegisterServerEvent('qb-graffiti:client:addServerGraffiti', function(model, coor
     local Player = QBCore.Functions.GetPlayer(source)
     if Player and isLoaded then
         if RemoveItem(source, 'spraycan', 1) then
-            local ped = GetPlayerPed(source)
-            local playerCoords = GetEntityCoords(ped)
-            local zone = exports['cb-gangsystem']:GetGangZonePlayer(playerCoords)
-            local gangID = exports['cb-gangsystem']:GetGangID(source)
-            if zone ~= nil and gangID ~= nil then
-                -- TODO: Trigger Server Event for Gang Sprays
-            end
             MySQL.insert('Insert into `graffitis` (owner, model, `coords`, `rotation`) values (@owner, @model, @coords, @rotation)', {
                 ['@owner'] = Player.PlayerData.citizenid,
                 ['@model'] = tostring(model),
